@@ -29,9 +29,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
-        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        /* Custom scrollbar */
+        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -66,11 +65,11 @@
                 <span class="text-slate-400">Room:</span>
                 <span id="badge-room-code" class="font-mono font-bold text-indigo-300">------</span>
             </div>
-            <button onclick="copyRoomLink()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1.5 shadow-sm">
+            <button onclick="window.copyRoomLink()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1.5 shadow-sm">
                 <i class="fa-solid fa-share-nodes text-indigo-400"></i>
                 <span>Bagikan Link</span>
             </button>
-            <button onclick="leaveRoom()" class="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-medium transition">
+            <button onclick="window.leaveRoom()" class="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-medium transition">
                 <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
             </button>
         </div>
@@ -89,7 +88,7 @@
                 </div>
                 
                 <h2 class="text-2xl font-bold tracking-tight mb-2">Streaming Musik Bareng</h2>
-                <p class="text-sm text-slate-400 mb-6">Nikmati lagu dari YouTube secara sinkron, tanpa jeda, bersama teman di mana saja.</p>
+                <p class="text-sm text-slate-400 mb-6">Nikmati lagu dari YouTube secara sinkron bersama teman-temanmu secara realtime.</p>
 
                 <div class="space-y-4 text-left">
                     <div>
@@ -98,9 +97,9 @@
                     </div>
 
                     <div class="pt-2">
-                        <button onclick="createRoom()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 flex items-center justify-center space-x-2">
+                        <button id="btn-create-room" type="button" onclick="window.handleCreateRoom()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 flex items-center justify-center space-x-2 cursor-pointer active:scale-95">
                             <i class="fa-solid fa-plus-circle"></i>
-                            <span>Buat Room Baru</span>
+                            <span id="lbl-create-room">Buat Room Baru</span>
                         </button>
                     </div>
 
@@ -114,7 +113,7 @@
                         <label class="block text-xs font-medium text-slate-400 mb-1.5">Kode / Link Room</label>
                         <div class="flex space-x-2">
                             <input type="text" id="input-room-code" placeholder="Masukkan kode room..." class="flex-1 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition uppercase font-mono">
-                            <button onclick="joinRoomFromInput()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-5 py-3 rounded-xl text-sm font-medium transition">
+                            <button id="btn-join-room" type="button" onclick="window.handleJoinRoom()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-5 py-3 rounded-xl text-sm font-medium transition cursor-pointer active:scale-95">
                                 Gabung
                             </button>
                         </div>
@@ -150,29 +149,34 @@
                         </div>
                     </div>
 
-                    <!-- YouTube Embed Container (Hidden/Managed) -->
+                    <!-- YouTube Embed Container -->
                     <div class="aspect-video w-full bg-slate-900 rounded-2xl overflow-hidden shadow-inner relative border border-slate-800/80 mb-4 flex items-center justify-center">
-                        <div id="youtube-player"></div>
-                        <div id="player-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 bg-slate-900/90 z-10 p-6 text-center">
+                        <div id="youtube-player" class="w-full h-full"></div>
+                        <!-- Native Audio Fallback for Restricted YouTube Tracks -->
+                        <audio id="native-audio-player" class="hidden" crossorigin="anonymous"></audio>
+                        <div id="player-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 bg-slate-900/90 z-10 p-6 text-center pointer-events-none">
                             <i class="fa-brands fa-youtube text-4xl mb-2 text-rose-500/80 animate-bounce"></i>
                             <p class="text-sm font-medium text-slate-300">Belum ada lagu yang diputar</p>
-                            <p class="text-xs text-slate-500 mt-1">Tambahkan lagu dari daftar pencarian atau masukkan link YouTube di bawah.</p>
+                            <p class="text-xs text-slate-500 mt-1">Cari lagu atau paste link YouTube di bawah untuk memulai.</p>
                         </div>
                     </div>
 
                     <!-- Track Info -->
-                    <div class="mb-4">
-                        <h3 id="current-title" class="text-lg font-bold text-white truncate">Pilih atau cari lagu untuk mulai</h3>
-                        <p id="current-channel" class="text-xs text-slate-400 mt-0.5 truncate">Channel YouTube</p>
+                    <div class="mb-4 flex items-center space-x-3">
+                        <img id="current-thumb" src="https://placehold.co/120x90/1e293b/64748b?text=SyncWave" class="w-14 h-14 object-cover rounded-xl border border-slate-800 shadow-md" alt="Cover">
+                        <div class="min-w-0 flex-1">
+                            <h3 id="current-title" class="text-base font-bold text-white truncate">Pilih atau cari lagu untuk mulai</h3>
+                            <p id="current-channel" class="text-xs text-slate-400 mt-0.5 truncate">Channel YouTube</p>
+                        </div>
                     </div>
 
                     <!-- Playback Controls -->
                     <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
                         <div class="flex items-center space-x-2">
-                            <button onclick="togglePlayPause()" id="btn-play-pause" class="w-12 h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i class="fa-solid fa-play text-sm"></i>
+                            <button id="btn-play-pause" onclick="window.togglePlayPause()" class="w-12 h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition active:scale-95">
+                                <i id="play-pause-icon" class="fa-solid fa-play text-sm"></i>
                             </button>
-                            <button onclick="skipTrack()" class="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 flex items-center justify-center transition">
+                            <button id="btn-skip" onclick="window.playNextSong()" class="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 flex items-center justify-center transition active:scale-95">
                                 <i class="fa-solid fa-forward-step text-sm"></i>
                             </button>
                         </div>
@@ -185,7 +189,7 @@
                             </div>
                             <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800">
                                 <i class="fa-solid fa-volume-high text-slate-400 text-xs"></i>
-                                <input type="range" id="volume-slider" min="0" max="100" value="80" oninput="changeVolume(this.value)" class="w-20 accent-indigo-500 h-1 bg-slate-700 rounded-lg cursor-pointer">
+                                <input type="range" id="volume-slider" oninput="window.setPlayerVolume(this.value)" min="0" max="100" value="80" class="w-20 accent-indigo-500 h-1 bg-slate-700 rounded-lg cursor-pointer">
                             </div>
                         </div>
                     </div>
@@ -200,16 +204,16 @@
                     
                     <div class="space-y-3">
                         <div class="flex space-x-2">
-                            <input type="text" id="input-search" placeholder="Cari judul lagu atau artist (cth: JKT48, Lathi)..." onkeydown="if(event.key === 'Enter') searchMusic()" class="flex-1 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <button onclick="searchMusic()" id="btn-search" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition flex items-center space-x-1.5 shadow-md shadow-indigo-600/20">
+                            <input type="text" id="input-search" placeholder="Cari judul lagu atau penyanyi (misal: Sheila on 7)..." class="flex-1 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                            <button id="btn-search" onclick="window.searchMusic()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition flex items-center space-x-1.5 shadow-md shadow-indigo-600/20 active:scale-95">
                                 <i class="fa-solid fa-search"></i>
                                 <span class="hidden sm:inline">Cari</span>
                             </button>
                         </div>
 
                         <div class="flex space-x-2">
-                            <input type="text" id="input-url" placeholder="Atau paste Link YouTube langsung (https://youtu.be/...)" class="flex-1 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <button onclick="addSongByUrl()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center space-x-1">
+                            <input type="text" id="input-url" placeholder="Paste Link YouTube (https://youtu.be/... atau watch?v=...)" class="flex-1 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                            <button id="btn-add-url" onclick="window.addSongByUrl()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-medium transition flex items-center space-x-1 active:scale-95">
                                 <i class="fa-solid fa-plus"></i>
                                 <span>Tambah URL</span>
                             </button>
@@ -218,10 +222,8 @@
 
                     <!-- Search Results Container -->
                     <div id="search-results-container" class="mt-4 hidden space-y-2 max-h-64 overflow-y-auto pr-1">
-                        <div class="text-xs font-semibold text-slate-400 mb-2">Hasil Pencarian YouTube (Gemini AI):</div>
-                        <div id="search-results-list" class="space-y-2">
-                            <!-- Populated dynamically -->
-                        </div>
+                        <div class="text-xs font-semibold text-slate-400 mb-2">Hasil Pencarian YouTube:</div>
+                        <div id="search-results-list" class="space-y-2"></div>
                     </div>
                 </div>
 
@@ -242,18 +244,17 @@
 
                     <!-- Queue List -->
                     <div id="queue-list" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                        <!-- Empty State -->
                         <div id="queue-empty" class="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
                             <i class="fa-solid fa-music text-3xl mb-2 text-slate-600"></i>
                             <p class="text-xs font-medium text-slate-400">Antrian lagu kosong</p>
-                            <p class="text-[11px] text-slate-500 mt-1">Cari lagu atau masukkan link YouTube untuk menambahkan ke antrian.</p>
+                            <p class="text-[11px] text-slate-500 mt-1">Cari lagu atau tambahkan link YouTube ke dalam antrian.</p>
                         </div>
                     </div>
 
                     <!-- Bottom Queue Action -->
                     <div class="pt-4 mt-2 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400">
                         <span>Sinkronisasi Realtime Aktif</span>
-                        <button onclick="clearQueue()" class="text-rose-400 hover:text-rose-300 transition font-medium flex items-center space-x-1">
+                        <button id="btn-clear-queue" onclick="window.clearQueue()" class="text-rose-400 hover:text-rose-300 transition font-medium flex items-center space-x-1">
                             <i class="fa-solid fa-trash-can text-[10px]"></i>
                             <span>Kosongkan Antrian</span>
                         </button>
@@ -266,9 +267,7 @@
                         <span>Partisipan Room</span>
                         <span id="participants-badge" class="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-md text-[10px]">1 online</span>
                     </h5>
-                    <div id="participants-list" class="flex flex-wrap gap-2">
-                        <!-- Participant pills -->
-                    </div>
+                    <div id="participants-list" class="flex flex-wrap gap-2"></div>
                 </div>
 
             </div>
@@ -279,63 +278,35 @@
 
     <!-- Footer -->
     <footer class="relative z-10 border-t border-slate-800/80 glass py-4 px-6 text-center text-xs text-slate-500">
-        SyncWave &bull; Built for seamless collaborative music streaming &bull; Developed by <span class="text-indigo-400 font-medium">@newtoen</span>
+        SyncWave &bull; Streaming Musik Realtime &bull; Developed by <span class="text-indigo-400 font-medium">@newtoen</span>
     </footer>
 
     <!-- YouTube IFrame API Script -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
-    <!-- Firebase SDKs & App Logic -->
+    <!-- Firebase & Application Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global Firebase Environment Variables
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-
-        let app, db, auth;
+        let db = null;
+        let auth = null;
         let currentUser = null;
         let currentRoomId = null;
-        let username = "Guest_" + Math.floor(Math.random() * 1000);
+        let username = "User_" + Math.floor(Math.random() * 1000);
         let roomUnsubscribe = null;
-        let isHost = false;
-
-        // YouTube Player variables
         let ytPlayer = null;
         let playerReady = false;
         let currentVideoId = null;
-        let isInternalStateChange = false;
+        let localRoomState = null;
+        let activeVolume = 80;
+        let isSyncing = false;
 
-        // Initialize Firebase
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            signInAnonymously(auth).catch((err) => console.log("Auth error:", err));
-
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    currentUser = user;
-                }
-            });
-        } catch (e) {
-            console.error("Firebase init error:", e);
-        }
-
-        // Check URL for Room Code on Load
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const roomParam = urlParams.get('room');
-            if (roomParam) {
-                document.getElementById('input-room-code').value = roomParam;
-            }
-        });
-
-        // Toast Notification System
+        // Global functions accessible everywhere
         window.showToast = function(message, type = 'info') {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             const bgColors = type === 'error' ? 'bg-rose-600 text-white' : (type === 'success' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-100 border border-slate-700');
             toast.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center space-x-2 transition-all transform translate-y-2 opacity-0 ${bgColors}`;
@@ -347,134 +318,183 @@
             toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
             container.appendChild(toast);
 
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
             setTimeout(() => {
                 toast.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
+        };
+
+        async function initFirebase() {
+            try {
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    await signInAnonymously(auth);
+                    onAuthStateChanged(auth, (user) => { if (user) currentUser = user; });
+                }
+            } catch (e) {
+                console.warn("Firebase fallback mode active:", e);
+            }
         }
 
-        // YouTube IFrame API Ready Callback
+        initFirebase();
+
+        // YouTube Player Initialization
         window.onYouTubeIframeAPIReady = function() {
             ytPlayer = new YT.Player('youtube-player', {
                 height: '100%',
                 width: '100%',
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 1,
-                    'disablekb': 0,
-                    'rel': 0
+                playerVars: { 
+                    'autoplay': 1, 
+                    'playsinline': 1, 
+                    'controls': 1, 
+                    'enablejsapi': 1, 
+                    'origin': window.location.origin 
                 },
                 events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onReady': () => { 
+                        playerReady = true;
+                        if (localRoomState && localRoomState.currentTrack) {
+                            renderRoomData(localRoomState);
+                        }
+                    },
+                    'onError': (e) => {
+                        console.warn("YouTube Embed Error Code:", e.data);
+                        if (localRoomState && localRoomState.currentTrack) {
+                            playAudioFallback(localRoomState.currentTrack.videoId);
+                        }
+                    },
+                    'onStateChange': (e) => {
+                        if (e.data === YT.PlayerState.ENDED) window.playNextSong();
+                    }
                 }
+            });
+        };
+
+        function playAudioFallback(videoId) {
+            const nativeAudio = document.getElementById('native-audio-player');
+            if (!nativeAudio) return;
+            nativeAudio.src = `https://www.youtube.com/watch?v=${videoId}`;
+            nativeAudio.volume = activeVolume / 100;
+            nativeAudio.play().catch(() => {
+                window.showToast("Klik tombol Play untuk mengaktifkan musik.", "info");
             });
         }
 
-        function onPlayerReady(event) {
-            playerReady = true;
-        }
+        window.extractYouTubeId = function(url) {
+            if (!url) return null;
+            const cleanUrl = url.trim();
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = cleanUrl.match(regExp);
+            if (match && match[2].length === 11) return match[2];
+            if (cleanUrl.length === 11 && !cleanUrl.includes('http')) return cleanUrl;
+            return null;
+        };
 
-        function onPlayerStateChange(event) {
-            if (isInternalStateChange) return;
-            if (!currentRoomId) return;
-
-            if (event.data === YT.PlayerState.PLAYING) {
-                updateRoomStateInFirestore({ isPlaying: true });
-            } else if (event.data === YT.PlayerState.PAUSED) {
-                updateRoomStateInFirestore({ isPlaying: false });
-            } else if (event.data === YT.PlayerState.ENDED) {
-                playNextSong();
+        function getOrInitLocalState(roomCode, initialData = null) {
+            if (!localRoomState || localRoomState.roomCode !== roomCode) {
+                localRoomState = initialData || {
+                    roomCode: roomCode,
+                    hostId: 'user_' + Math.floor(Math.random() * 1000),
+                    hostName: username,
+                    currentTrack: null,
+                    isPlaying: false,
+                    currentTime: 0,
+                    queue: [],
+                    participants: { 'p_1': { name: username, joinedAt: Date.now() } },
+                    createdAt: Date.now()
+                };
             }
+            return localRoomState;
         }
 
-        // Room Creation & Joining
-        window.createRoom = async function() {
+        window.handleCreateRoom = async function() {
             const nameInput = document.getElementById('input-username').value.trim();
             if (nameInput) username = nameInput;
 
-            const newRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            currentRoomId = newRoomCode;
-            isHost = true;
+            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            currentRoomId = roomCode;
 
-            const uid = currentUser ? currentUser.uid : 'user_' + Math.floor(Math.random() * 100000);
-            const roomRef = doc(db, 'rooms', currentRoomId);
+            const uid = currentUser ? currentUser.uid : 'user_' + Math.floor(Math.random() * 10000);
             
             const initialData = {
-                roomCode: newRoomCode,
+                roomCode: roomCode,
                 hostId: uid,
                 hostName: username,
                 currentTrack: null,
                 isPlaying: false,
                 currentTime: 0,
                 queue: [],
-                participants: {
-                    [uid]: {
-                        name: username,
-                        joinedAt: Date.now()
-                    }
-                },
+                participants: { [uid]: { name: username, joinedAt: Date.now() } },
                 createdAt: Date.now()
             };
 
-            try {
-                await setDoc(roomRef, initialData);
-                enterRoomUI(newRoomCode);
-                setupRoomListener(newRoomCode);
-                showToast("Room berhasil dibuat!", "success");
-            } catch (e) {
-                console.error("Error creating room:", e);
-                showToast("Gagal membuat room. Silakan coba lagi.", "error");
-            }
-        }
+            localRoomState = initialData;
 
-        window.joinRoomFromInput = function() {
-            const code = document.getElementById('input-room-code').value.trim().toUpperCase();
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', roomCode);
+                    await setDoc(roomRef, initialData);
+                    setupRoomListener(roomCode);
+                } catch (e) {
+                    console.warn("Firestore fallback mode:", e);
+                }
+            }
+
+            enterRoomUI(roomCode);
+            renderRoomData(localRoomState);
+            window.showToast("Room berhasil dibuat!", "success");
+        };
+
+        window.handleJoinRoom = async function() {
+            const codeInput = document.getElementById('input-room-code');
+            let code = codeInput ? codeInput.value.trim().toUpperCase() : '';
+            if (code.includes('ROOM=')) {
+                code = code.split('ROOM=')[1].split('&')[0];
+            }
             if (!code) {
-                showToast("Masukkan kode room terlebih dahulu!", "error");
+                window.showToast("Masukkan kode room terlebih dahulu!", "error");
                 return;
             }
             const nameInput = document.getElementById('input-username').value.trim();
             if (nameInput) username = nameInput;
 
-            joinRoom(code);
-        }
+            currentRoomId = code;
 
-        async function joinRoom(roomCode) {
-            currentRoomId = roomCode;
-            const roomRef = doc(db, 'rooms', roomCode);
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', code);
+                    const snap = await getDoc(roomRef);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const myUid = currentUser ? currentUser.uid : 'user_' + Math.floor(Math.random() * 10000);
+                        const participants = data.participants || {};
+                        participants[myUid] = { name: username, joinedAt: Date.now() };
 
-            try {
-                const snap = await getDoc(roomRef);
-                if (!snap.exists()) {
-                    showToast("Room tidak ditemukan!", "error");
-                    currentRoomId = null;
-                    return;
+                        await updateDoc(roomRef, { participants });
+                        setupRoomListener(code);
+                        enterRoomUI(code);
+                        window.showToast(`Berhasil bergabung ke room ${code}!`, "success");
+                        return;
+                    } else {
+                        window.showToast(`Room ${code} tidak ditemukan!`, "error");
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Join fallback mode:", e);
                 }
-
-                const data = snap.data();
-                const myUid = currentUser ? currentUser.uid : 'user_' + Math.floor(Math.random() * 100000);
-                isHost = (data.hostId === myUid);
-
-                const participants = data.participants || {};
-                participants[myUid] = { name: username, joinedAt: Date.now() };
-
-                await updateDoc(roomRef, { participants });
-
-                enterRoomUI(roomCode);
-                setupRoomListener(roomCode);
-                showToast(`Berhasil bergabung ke room ${roomCode}!`, "success");
-            } catch (e) {
-                console.error("Error joining room:", e);
-                showToast("Gagal bergabung ke room.", "error");
             }
-        }
 
-        // Room UI & Firestore Sync
+            const state = getOrInitLocalState(code);
+            enterRoomUI(code);
+            renderRoomData(state);
+            window.showToast(`Bergabung ke room ${code}!`, "success");
+        };
+
         function enterRoomUI(roomCode) {
             document.getElementById('view-lobby').classList.add('hidden');
             document.getElementById('view-room').classList.remove('hidden');
@@ -482,29 +502,37 @@
             document.getElementById('room-header-info').classList.add('flex');
             document.getElementById('badge-room-code').innerText = roomCode;
 
-            // Update URL query string without reloading page
-            const newUrl = `${window.location.pathname}?room=${roomCode}`;
-            window.history.pushState({ path: newUrl }, '', newUrl);
+            try {
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('room', roomCode);
+                const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+                window.history.pushState({ path: newUrl }, '', newUrl);
+            } catch (e) {
+                console.warn("History pushState restricted:", e);
+            }
         }
 
         function setupRoomListener(roomCode) {
             if (roomUnsubscribe) roomUnsubscribe();
+            if (!db) return;
 
             const roomRef = doc(db, 'rooms', roomCode);
             roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
                 if (!snapshot.exists()) {
-                    showToast("Room telah ditutup.", "error");
-                    leaveRoom();
+                    window.showToast("Room telah ditutup.", "error");
+                    window.leaveRoom();
                     return;
                 }
-
                 const data = snapshot.data();
+                localRoomState = data;
                 renderRoomData(data);
+            }, (err) => {
+                console.warn("Listener fallback:", err.message);
             });
         }
 
         function renderRoomData(data) {
-            // Update Host & Participant details
+            if (!data) return;
             document.getElementById('host-name').innerText = data.hostName || "Anonim";
             
             const participants = data.participants || {};
@@ -521,7 +549,6 @@
                 pContainer.appendChild(pill);
             });
 
-            // Update Current Track & Player State
             const track = data.currentTrack;
             const placeholder = document.getElementById('player-placeholder');
 
@@ -529,173 +556,346 @@
                 placeholder.classList.add('hidden');
                 document.getElementById('current-title').innerText = track.title;
                 document.getElementById('current-channel').innerText = track.channelTitle || "YouTube Music";
+                if (track.thumbnail) {
+                    document.getElementById('current-thumb').src = track.thumbnail;
+                }
 
                 if (currentVideoId !== track.videoId) {
                     currentVideoId = track.videoId;
                     if (playerReady && ytPlayer && ytPlayer.loadVideoById) {
-                        isInternalStateChange = true;
-                        ytPlayer.loadVideoById({
-                            videoId: track.videoId,
-                            startSeconds: data.currentTime || 0
-                        });
-                        setTimeout(() => { isInternalStateChange = false; }, 1000);
+                        try {
+                            ytPlayer.loadVideoById({ 
+                                videoId: track.videoId, 
+                                startSeconds: data.currentTime || 0 
+                            });
+                            if (data.isPlaying) ytPlayer.playVideo();
+                        } catch(err) {
+                            playAudioFallback(track.videoId);
+                        }
+                    } else {
+                        playAudioFallback(track.videoId);
                     }
                 }
 
-                // Handle Play / Pause sync
                 if (playerReady && ytPlayer && ytPlayer.getPlayerState) {
-                    const state = ytPlayer.getPlayerState();
-                    if (data.isPlaying && state !== YT.PlayerState.PLAYING) {
-                        isInternalStateChange = true;
-                        ytPlayer.playVideo();
-                        setTimeout(() => { isInternalStateChange = false; }, 800);
-                    } else if (!data.isPlaying && state === YT.PlayerState.PLAYING) {
-                        isInternalStateChange = true;
-                        ytPlayer.pauseVideo();
-                        setTimeout(() => { isInternalStateChange = false; }, 800);
-                    }
+                    try {
+                        const state = ytPlayer.getPlayerState();
+                        if (data.isPlaying && state !== YT.PlayerState.PLAYING) {
+                            ytPlayer.playVideo();
+                        } else if (!data.isPlaying && state === YT.PlayerState.PLAYING) {
+                            ytPlayer.pauseVideo();
+                        }
+                    } catch(e){}
                 }
 
-                // Update Play/Pause Button Icon
-                const playBtnIcon = document.querySelector('#btn-play-pause i');
-                if (data.isPlaying) {
-                    playBtnIcon.className = 'fa-solid fa-pause text-sm';
-                } else {
-                    playBtnIcon.className = 'fa-solid fa-play text-sm';
+                const icon = document.getElementById('play-pause-icon');
+                if (icon) {
+                    icon.className = data.isPlaying ? 'fa-solid fa-pause text-sm' : 'fa-solid fa-play text-sm';
                 }
             } else {
                 placeholder.classList.remove('hidden');
                 document.getElementById('current-title').innerText = "Pilih atau cari lagu untuk mulai";
                 document.getElementById('current-channel').innerText = "Channel YouTube";
+                document.getElementById('current-thumb').src = "https://placehold.co/120x90/1e293b/64748b?text=SyncWave";
                 if (playerReady && ytPlayer && ytPlayer.stopVideo) {
-                    ytPlayer.stopVideo();
+                    try { ytPlayer.stopVideo(); } catch(e){}
                 }
             }
 
-            // Render Queue
             renderQueue(data.queue || []);
         }
 
         function renderQueue(queue) {
-            const queueList = document.getElementById('queue-list');
-            const queueEmpty = document.getElementById('queue-empty');
-            document.getElementById('queue-count').innerText = `${queue.length} lagu`;
+            const container = document.getElementById('queue-list');
+            const countBadge = document.getElementById('queue-count');
+            countBadge.innerText = `${queue.length} lagu`;
 
             if (queue.length === 0) {
-                queueList.innerHTML = '';
-                queueList.appendChild(queueEmpty);
-                queueEmpty.classList.remove('hidden');
+                container.innerHTML = `
+                    <div id="queue-empty" class="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
+                        <i class="fa-solid fa-music text-3xl mb-2 text-slate-600"></i>
+                        <p class="text-xs font-medium text-slate-400">Antrian lagu kosong</p>
+                        <p class="text-[11px] text-slate-500 mt-1">Cari lagu atau tambahkan link YouTube ke dalam antrian.</p>
+                    </div>`;
                 return;
             }
 
-            queueEmpty.classList.add('hidden');
-            queueList.innerHTML = '';
-
-            queue.forEach((item, index) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 p-3 rounded-2xl flex items-center justify-between space-x-3 transition group';
-                itemEl.innerHTML = `
+            container.innerHTML = '';
+            queue.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/80 border border-slate-800/80 p-2.5 rounded-2xl flex items-center justify-between space-x-3 hover:border-slate-700 transition group';
+                card.innerHTML = `
                     <div class="flex items-center space-x-3 min-w-0">
-                        <span class="text-xs font-mono font-bold text-slate-500 w-4 text-center">${index + 1}</span>
-                        <img src="${item.thumbnail || 'https://placehold.co/120x90/1e293b/6366f1?text=Music'}" class="w-12 h-9 object-cover rounded-lg border border-slate-800" alt="thumb">
+                        <span class="text-xs font-semibold text-slate-500 w-4 text-center">${idx + 1}</span>
+                        <img src="${item.thumbnail}" class="w-10 h-10 object-cover rounded-xl border border-slate-800" alt="thumb">
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition">${item.title}</p>
-                            <p class="text-[11px] text-slate-400 truncate">${item.channelTitle || 'YouTube'}</p>
+                            <p class="text-xs font-semibold text-slate-200 truncate">${item.title}</p>
+                            <p class="text-[10px] text-slate-400 truncate">Oleh: ${item.addedBy || 'User'}</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-1">
-                        <button onclick="removeFromQueue(${index})" class="text-slate-500 hover:text-rose-400 p-1.5 transition">
-                            <i class="fa-solid fa-xmark text-xs"></i>
-                        </button>
-                    </div>
+                    <button onclick="window.removeFromQueue(${idx})" class="text-slate-500 hover:text-rose-400 p-2 rounded-xl transition">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
                 `;
-                queueList.appendChild(itemEl);
+                container.appendChild(card);
             });
-        }
-
-        // Room Action Handlers
-        async function updateRoomStateInFirestore(updates) {
-            if (!currentRoomId) return;
-            try {
-                const roomRef = doc(db, 'rooms', currentRoomId);
-                await updateDoc(roomRef, updates);
-            } catch (e) {
-                console.error("Firestore update error:", e);
-            }
         }
 
         window.togglePlayPause = async function() {
             if (!currentRoomId) return;
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            const snap = await getDoc(roomRef);
-            if (!snap.exists()) return;
+            const state = getOrInitLocalState(currentRoomId);
+            const nextState = !state.isPlaying;
+            state.isPlaying = nextState;
 
-            const data = snap.data();
-            const currentIsPlaying = data.isPlaying || false;
-            
-            await updateDoc(roomRef, { isPlaying: !currentIsPlaying });
-        }
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', currentRoomId);
+                    await updateDoc(roomRef, { isPlaying: nextState });
+                } catch (e) {}
+            }
 
-        window.skipTrack = function() {
-            playNextSong();
-        }
+            if (playerReady && ytPlayer) {
+                try {
+                    if (nextState) ytPlayer.playVideo();
+                    else ytPlayer.pauseVideo();
+                } catch(e){}
+            }
 
-        async function playNextSong() {
+            renderRoomData(state);
+        };
+
+        window.playNextSong = async function() {
             if (!currentRoomId) return;
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            const snap = await getDoc(roomRef);
-            if (!snap.exists()) return;
-
-            const data = snap.data();
-            let queue = data.queue || [];
+            const state = getOrInitLocalState(currentRoomId);
+            let queue = state.queue || [];
 
             if (queue.length > 0) {
                 const nextTrack = queue.shift();
-                await updateDoc(roomRef, {
-                    currentTrack: nextTrack,
-                    isPlaying: true,
-                    currentTime: 0,
-                    queue: queue
-                });
+                state.currentTrack = nextTrack;
+                state.isPlaying = true;
+                state.currentTime = 0;
+                state.queue = queue;
             } else {
-                await updateDoc(roomRef, {
-                    currentTrack: null,
-                    isPlaying: false,
-                    currentTime: 0
-                });
+                state.currentTrack = null;
+                state.isPlaying = false;
+                state.currentTime = 0;
             }
-        }
+
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', currentRoomId);
+                    await updateDoc(roomRef, { 
+                        currentTrack: state.currentTrack, 
+                        isPlaying: state.isPlaying, 
+                        currentTime: 0, 
+                        queue: state.queue 
+                    });
+                } catch (e) {}
+            }
+            renderRoomData(state);
+        };
 
         window.removeFromQueue = async function(index) {
             if (!currentRoomId) return;
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            const snap = await getDoc(roomRef);
-            if (!snap.exists()) return;
-
-            let queue = snap.data().queue || [];
+            const state = getOrInitLocalState(currentRoomId);
+            let queue = state.queue || [];
             queue.splice(index, 1);
+            state.queue = queue;
 
-            await updateDoc(roomRef, { queue });
-            showToast("Lagu dihapus dari antrian.", "info");
-        }
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', currentRoomId);
+                    await updateDoc(roomRef, { queue });
+                } catch (e) {}
+            }
+            renderRoomData(state);
+            window.showToast("Lagu dihapus dari antrian.", "info");
+        };
 
         window.clearQueue = async function() {
             if (!currentRoomId) return;
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            await updateDoc(roomRef, { queue: [] });
-            showToast("Antrian dibersihkan.", "info");
+            const state = getOrInitLocalState(currentRoomId);
+            state.queue = [];
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', currentRoomId);
+                    await updateDoc(roomRef, { queue: [] });
+                } catch (e) {}
+            }
+            renderRoomData(state);
+            window.showToast("Antrian lagu dibersihkan.", "info");
+        };
+
+        async function addTrackToRoom(track) {
+            if (!currentRoomId) return;
+            const state = getOrInitLocalState(currentRoomId);
+
+            if (!state.currentTrack) {
+                state.currentTrack = track;
+                state.isPlaying = true;
+                state.currentTime = 0;
+                window.showToast(`Memutar: ${track.title}`, "success");
+            } else {
+                if (!state.queue) state.queue = [];
+                state.queue.push(track);
+                window.showToast(`Ditambahkan ke antrian: ${track.title}`, "success");
+            }
+
+            if (db) {
+                try {
+                    const roomRef = doc(db, 'rooms', currentRoomId);
+                    await updateDoc(roomRef, { 
+                        currentTrack: state.currentTrack, 
+                        isPlaying: state.isPlaying, 
+                        queue: state.queue 
+                    });
+                } catch (e) {}
+            }
+            renderRoomData(state);
         }
+
+        window.addSongByUrl = async function() {
+            const input = document.getElementById('input-url');
+            const url = input ? input.value : '';
+            if (!url) {
+                window.showToast("Tempelkan/paste link YouTube terlebih dahulu!", "error");
+                return;
+            }
+
+            const videoId = window.extractYouTubeId(url);
+            if (!videoId) {
+                window.showToast("Format link YouTube tidak dikenali!", "error");
+                return;
+            }
+
+            // Fetch video info via oEmbed API for real title and metadata
+            let trackTitle = `YouTube Track (${videoId})`;
+            let channelTitle = "YouTube Music";
+
+            try {
+                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+                const data = await res.json();
+                if (data.title) {
+                    trackTitle = data.title;
+                    channelTitle = data.author_name || "YouTube Music";
+                }
+            } catch(e) {}
+
+            const track = {
+                videoId: videoId,
+                title: trackTitle,
+                channelTitle: channelTitle,
+                thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                addedBy: username
+            };
+
+            await addTrackToRoom(track);
+            input.value = '';
+        };
+
+        window.searchMusic = async function() {
+            const input = document.getElementById('input-search');
+            const query = input ? input.value.trim() : '';
+            if (!query) {
+                window.showToast("Ketik judul lagu yang ingin dicari!", "error");
+                return;
+            }
+
+            const resultsContainer = document.getElementById('search-results-container');
+            const resultsList = document.getElementById('search-results-list');
+            
+            resultsContainer.classList.remove('hidden');
+            resultsList.innerHTML = `<div class="text-xs text-slate-400 flex items-center space-x-2 py-3"><i class="fa-solid fa-spinner animate-spin text-indigo-400"></i><span>Mencari di YouTube via Google Search...</span></div>`;
+
+            try {
+                // Call Gemini Flash with Search Grounding to fetch accurate YouTube titles and IDs
+                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Cari di YouTube 3 lagu paling tepat untuk kata kunci: "${query}". Cari ID video YouTube 11 karakter yang valid untuk lagu ini. Berikan jawaban HANYA berupa valid JSON array object sederhana dengan format: [{"videoId":"11char_id","title":"Judul Asli Lagu","channelTitle":"Nama Channel"}]` }] }],
+                        tools: [{ "google_search": {} }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                const result = await response.json();
+                let songs = [];
+                try {
+                    const jsonText = result.candidates[0].content.parts[0].text;
+                    songs = JSON.parse(jsonText);
+                } catch(err) {
+                    // Direct YouTube link extraction fallback
+                    const detectedId = window.extractYouTubeId(query);
+                    if (detectedId) {
+                        songs = [{ videoId: detectedId, title: query, channelTitle: 'YouTube' }];
+                    }
+                }
+
+                if (!songs || songs.length === 0) {
+                    resultsList.innerHTML = `<div class="text-xs text-slate-400 py-2">Tidak ada lagu ditemukan. Coba gunakan link YouTube langsung.</div>`;
+                    return;
+                }
+
+                resultsList.innerHTML = '';
+                songs.forEach(item => {
+                    const videoId = item.videoId;
+                    if (!videoId || videoId.length !== 11) return;
+                    const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    const row = document.createElement('div');
+                    row.className = 'bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 p-2.5 rounded-xl flex items-center justify-between space-x-3 transition';
+                    row.innerHTML = `
+                        <div class="flex items-center space-x-3 min-w-0">
+                            <img src="${thumbnail}" class="w-12 h-9 object-cover rounded-lg" alt="thumb">
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-slate-200 truncate">${item.title}</p>
+                                <p class="text-[11px] text-slate-400 truncate">${item.channelTitle || 'YouTube'}</p>
+                            </div>
+                        </div>
+                        <button class="btn-add-search bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 flex-shrink-0">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>Tambah</span>
+                        </button>
+                    `;
+                    row.querySelector('.btn-add-search').addEventListener('click', () => {
+                        addTrackToRoom({ 
+                            videoId: videoId, 
+                            title: item.title, 
+                            channelTitle: item.channelTitle || 'YouTube', 
+                            thumbnail, 
+                            addedBy: username 
+                        });
+                    });
+                    resultsList.appendChild(row);
+                });
+            } catch (err) {
+                console.warn("Search error fallback:", err);
+                resultsList.innerHTML = `<div class="text-xs text-amber-400 py-2">Gagal mencari otomatis. Tempelkan link YouTube secara langsung.</div>`;
+            }
+        };
+
+        window.setPlayerVolume = function(val) {
+            activeVolume = val;
+            if (playerReady && ytPlayer && ytPlayer.setVolume) {
+                try { ytPlayer.setVolume(val); } catch(e){}
+            }
+            const nativeAudio = document.getElementById('native-audio-player');
+            if (nativeAudio) nativeAudio.volume = val / 100;
+        };
 
         window.leaveRoom = function() {
             if (roomUnsubscribe) roomUnsubscribe();
             currentRoomId = null;
+            localRoomState = null;
             document.getElementById('view-room').classList.add('hidden');
             document.getElementById('view-lobby').classList.remove('hidden');
             document.getElementById('room-header-info').classList.add('hidden');
             
-            const cleanUrl = window.location.pathname;
-            window.history.pushState({ path: cleanUrl }, '', cleanUrl);
-        }
+            try {
+                const cleanUrl = window.location.pathname;
+                window.history.pushState({ path: cleanUrl }, '', cleanUrl);
+            } catch (e) {}
+        };
 
         window.copyRoomLink = function() {
             const url = window.location.href;
@@ -705,118 +905,32 @@
             tempInput.select();
             document.execCommand('copy');
             document.body.removeChild(tempInput);
-            showToast("Link room telah disalin!", "success");
-        }
+            window.showToast("Link room berhasil disalin!", "success");
+        };
 
-        window.changeVolume = function(val) {
-            if (playerReady && ytPlayer && ytPlayer.setVolume) {
-                ytPlayer.setVolume(val);
-            }
-        }
-
-        // Song Helper & YouTube Extraction
-        function extractYouTubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        window.addSongByUrl = async function() {
-            const input = document.getElementById('input-url');
-            const url = input.value.trim();
-            if (!url) return;
-
-            const videoId = extractYouTubeId(url);
-            if (!videoId) {
-                showToast("URL YouTube tidak valid!", "error");
-                return;
-            }
-
-            const track = {
-                videoId: videoId,
-                title: "Lagu YouTube (" + videoId + ")",
-                channelTitle: "YouTube Music",
-                thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-                addedBy: username
-            };
-
-            await addTrackToRoom(track);
-            input.value = '';
-        }
-
-        async function addTrackToRoom(track) {
-            if (!currentRoomId) return;
-
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            const snap = await getDoc(roomRef);
-            if (!snap.exists()) return;
-
-            const data = snap.data();
-            if (!data.currentTrack) {
-                await updateDoc(roomRef, {
-                    currentTrack: track,
-                    isPlaying: true,
-                    currentTime: 0
+        // Auto join room if URL contains ?room=
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputSearch = document.getElementById('input-search');
+            if (inputSearch) {
+                inputSearch.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') window.searchMusic();
                 });
-                showToast(`Memutar: ${track.title}`, "success");
-            } else {
-                const queue = data.queue || [];
-                queue.push(track);
-                await updateDoc(roomRef, { queue });
-                showToast(`Ditambahkan ke antrian: ${track.title}`, "success");
             }
-        }
-
-        // Gemini AI Music Search Simulation
-        window.searchMusic = function() {
-            const query = document.getElementById('input-search').value.trim();
-            if (!query) return;
-
-            const resultsContainer = document.getElementById('search-results-container');
-            const resultsList = document.getElementById('search-results-list');
-            
-            resultsContainer.classList.remove('hidden');
-            resultsList.innerHTML = `<div class="text-xs text-slate-400 flex items-center space-x-2 py-3"><i class="fa-solid fa-spinner animate-spin text-indigo-400"></i><span>Mencari lagu di YouTube...</span></div>`;
-
-            // Mocked API Search Results simulating YouTube video findings
-            setTimeout(() => {
-                const mockData = [
-                    { videoId: 'kJQP7kiw5Fk', title: `${query} - Official Audio Track`, channelTitle: 'Music Official Channel', thumbnail: 'https://placehold.co/120x90/312e81/ffffff?text=YouTube' },
-                    { videoId: 'fJ9rUzIMcZQ', title: `${query} - Acoustic Live Version`, channelTitle: 'Live Acoustic Sessions', thumbnail: 'https://placehold.co/120x90/4338ca/ffffff?text=Live' },
-                    { videoId: '3JZ_D3ELwOQ', title: `${query} - Remastered Audio HD`, channelTitle: 'Studio Audio Channel', thumbnail: 'https://placehold.co/120x90/1e1b4b/ffffff?text=Studio' },
-                ];
-
-                resultsList.innerHTML = '';
-                mockData.forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = 'bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 p-2.5 rounded-xl flex items-center justify-between space-x-3 transition';
-                    row.innerHTML = `
-                        <div class="flex items-center space-x-3 min-w-0">
-                            <img src="${item.thumbnail}" class="w-12 h-9 object-cover rounded-lg" alt="thumb">
-                            <div class="min-w-0">
-                                <p class="text-xs font-semibold text-slate-200 truncate">${item.title}</p>
-                                <p class="text-[11px] text-slate-400 truncate">${item.channelTitle}</p>
-                            </div>
-                        </div>
-                        <button onclick='queueSearchItem(${JSON.stringify(item)})' class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 flex-shrink-0">
-                            <i class="fa-solid fa-plus text-[10px]"></i>
-                            <span>Tambah</span>
-                        </button>
-                    `;
-                    resultsList.appendChild(row);
+            const inputUrl = document.getElementById('input-url');
+            if (inputUrl) {
+                inputUrl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') window.addSongByUrl();
                 });
-            }, 600);
-        }
+            }
 
-        window.queueSearchItem = function(item) {
-            addTrackToRoom({
-                videoId: item.videoId,
-                title: item.title,
-                channelTitle: item.channelTitle,
-                thumbnail: item.thumbnail,
-                addedBy: username
-            });
-        }
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomCodeParam = urlParams.get('room');
+            if (roomCodeParam) {
+                const inputRoomCode = document.getElementById('input-room-code');
+                if (inputRoomCode) inputRoomCode.value = roomCodeParam;
+                setTimeout(() => window.handleJoinRoom(), 800);
+            }
+        });
     </script>
 </body>
 </html>
